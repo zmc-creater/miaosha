@@ -8,7 +8,6 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import java.util.Set;
 
-
 @Component
 public class ValidatorImpl implements InitializingBean {
     private Validator validator;
@@ -26,7 +25,6 @@ public class ValidatorImpl implements InitializingBean {
         }
         return result;
     }
-
 
     @Override
     public void afterPropertiesSet() throws Exception {

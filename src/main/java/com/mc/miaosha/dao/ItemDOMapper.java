@@ -1,6 +1,8 @@
 package com.mc.miaosha.dao;
 
 import com.mc.miaosha.dataobject.ItemDO;
+import org.apache.ibatis.annotations.Param;
+import org.springframework.context.annotation.EnableMBeanExport;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -58,4 +60,6 @@ public interface ItemDOMapper {
      * @mbg.generated Thu Jun 03 21:46:20 CST 2021
      */
     int updateByPrimaryKey(ItemDO record);
+
+    int increaseSales(@Param("amount") Integer amount,@Param("itemId") Integer itemId);
 }

@@ -6,7 +6,6 @@ import com.mc.miaosha.error.EmBusinessError;
 import com.mc.miaosha.response.CommonReturnType;
 import com.mc.miaosha.service.ItemService;
 import com.mc.miaosha.service.model.ItemModel;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.util.BEncoderStream;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,11 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller("item")
 @RequestMapping(value = "/item")
-@CrossOrigin
 public class ItemController extends BaseController{
 
     @Autowired
@@ -35,7 +32,7 @@ public class ItemController extends BaseController{
         return CommonReturnType.create(itemModelList);
     }
 
-    @RequestMapping("/getItem")
+    @RequestMapping(value = "/getItem", method = {RequestMethod.GET})
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id")Integer id) throws BusinessException {
 
@@ -64,12 +61,12 @@ public class ItemController extends BaseController{
         itemModel.setImgUrl(imgUrl);
 
         ItemModel item = itemService.createItem(itemModel);
-        ItemVO itemVO = this.coverVoFromModel(item);
+        ItemVO itemVO = this.covertVoFromModel(item);
 
         return CommonReturnType.create(itemVO);
     }
 
-    private ItemVO coverVoFromModel(ItemModel itemModel) throws BusinessException {
+    private ItemVO covertVoFromModel(ItemModel itemModel) throws BusinessException {
         if (itemModel == null) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }

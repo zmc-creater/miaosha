@@ -84,6 +84,26 @@ public class ItemServiceImpl implements ItemService {
         return itemModel;
     }
 
+    @Override
+    @Transactional
+    public boolean decreaseStock(Integer itemId, Integer amount) {
+        int effect = itemStockDOMapper.decreaseStock(amount, itemId);
+        if (effect < 0){
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean increaseSales(Integer itemId, Integer amount) {
+        int increaseSales = itemDOMapper.increaseSales(amount,itemId);
+        if (increaseSales <= 0) {
+            return false;
+        }
+        return true;
+    }
+
     private ItemModel covertModelFromDataObject(ItemDO itemDO,ItemStockDO itemStockDO){
         if (itemDO == null){
             return null;

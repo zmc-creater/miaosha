@@ -10,10 +10,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.security.MD5Encoder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.server.Session;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import sun.misc.BASE64Encoder;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
@@ -29,9 +31,8 @@ public class UserController extends BaseController{
     UserService userService;
 
     @Autowired
-    private HttpServletRequest httpServletRequest;
+    HttpServletRequest httpServletRequest;
 
-    String ootpCode;
 
     //用户登录
     @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {BaseController.CONTENT_TYPE_FORMED})
@@ -45,9 +46,11 @@ public class UserController extends BaseController{
 
         //验证登录是否成功
         UserModel userModel = userService.validLogin(telphone, this.EncodeByMD5(encrpPassword));
+
+        //dataobject-->model
         UserVO userVO = convertFromModel(userModel);
         httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
-        httpServletRequest.getSession().setAttribute("UserVO",userVO);
+        httpServletRequest.getSession().setAttribute("LOGIN_USER",userVO);
         System.out.println("登录成功");
         return CommonReturnType.create(null);
     }
@@ -63,7 +66,9 @@ public class UserController extends BaseController{
                                      @RequestParam(name = "otpCode")String otpCode,
                                      HttpServletResponse httpServletResponse) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
         //验证码校验
-        String inSessionOtpCode = ootpCode;//(String)httpServletRequest.getSession().getAttribute("telphone");
+        //edge和chrome浏览器获取不到session，火狐浏览器可以
+        String inSessionOtpCode = (String)httpServletRequest.getSession().getAttribute(phone);
+
         if(!com.alibaba.druid.util.StringUtils.equals(otpCode,inSessionOtpCode)){
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"验证码错误");
         }
@@ -84,12 +89,6 @@ public class UserController extends BaseController{
         return CommonReturnType.create(null);
     }
 
-    public String EncodeByMD5(String str) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-        BASE64Encoder base64Encoder = new BASE64Encoder();
-        String newstr = base64Encoder.encode(md5.digest(str.getBytes("UTF-8")));
-        return newstr;
-    }
 
     @ResponseBody
     @RequestMapping(value = "/getotp",method = {RequestMethod.POST},consumes = {BaseController.CONTENT_TYPE_FORMED})
@@ -103,8 +102,8 @@ public class UserController extends BaseController{
         //将OTP验证码与用户的手机号关联,使用http的session
         httpServletRequest.getSession().setAttribute(telphone,otpCode);
         //将OTP验证码通过短信发给用户
+
         System.out.println("telphone="+telphone+",otpCode="+otpCode);
-        ootpCode = otpCode;
         return CommonReturnType.create(null);
     }
 
@@ -120,6 +119,14 @@ public class UserController extends BaseController{
 
         UserVO userVO = convertFromModel(userModel);
         return CommonReturnType.create(userVO);
+    }
+
+
+    public String EncodeByMD5(String str) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        BASE64Encoder base64Encoder = new BASE64Encoder();
+        String newstr = base64Encoder.encode(md5.digest(str.getBytes("UTF-8")));
+        return newstr;
     }
 
     private UserVO convertFromModel(UserModel userModel){

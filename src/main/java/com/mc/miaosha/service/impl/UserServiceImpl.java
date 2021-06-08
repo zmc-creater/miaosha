@@ -10,8 +10,6 @@ import com.mc.miaosha.service.UserService;
 import com.mc.miaosha.service.model.UserModel;
 import com.mc.miaosha.validator.ValidationResult;
 import com.mc.miaosha.validator.ValidatorImpl;
-import com.sun.org.apache.bcel.internal.generic.IFNE;
-import jdk.nashorn.internal.ir.CallNode;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;

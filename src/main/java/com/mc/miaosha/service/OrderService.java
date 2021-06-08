@@ -1,0 +1,9 @@
+package com.mc.miaosha.service;
+
+import com.mc.miaosha.error.BusinessException;
+import com.mc.miaosha.service.model.OrderModel;
+
+public interface OrderService {
+    OrderModel createOrder(Integer uerId, Integer itemId, Integer amount) throws BusinessException;
+
+}

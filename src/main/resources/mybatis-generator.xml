@@ -17,12 +17,7 @@
 
         <javaClientGenerator type="XMLMAPPER" targetPackage="com.mc.miaosha.dao" targetProject="src/main/java"/>
 
-        <table tableName="item" domainObjectName="ItemDO"
-               enableCountByExample="false"
-               enableUpdateByExample="false"
-               enableDeleteByExample="false"/>
-
-        <table tableName="item_stock" domainObjectName="ItemStockDO"
+        <table tableName="sequence_info" domainObjectName="SequenceDO"
                enableCountByExample="false"
                enableUpdateByExample="false"
                enableDeleteByExample="false"/>
