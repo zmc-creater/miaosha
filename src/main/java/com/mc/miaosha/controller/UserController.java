@@ -23,7 +23,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
-@CrossOrigin
+
 @Controller("user")
 @RequestMapping(value = "/user")
 public class UserController extends BaseController{

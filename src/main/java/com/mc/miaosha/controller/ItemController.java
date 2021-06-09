@@ -6,6 +6,8 @@ import com.mc.miaosha.error.EmBusinessError;
 import com.mc.miaosha.response.CommonReturnType;
 import com.mc.miaosha.service.ItemService;
 import com.mc.miaosha.service.model.ItemModel;
+import com.mc.miaosha.service.model.PromoModel;
+import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -40,7 +42,8 @@ public class ItemController extends BaseController{
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }
         ItemModel itemModel = itemService.getItemById(id);
-        ItemVO itemVO = this.coverVoFromModel(itemModel);
+
+        ItemVO itemVO = this.covertVOFromModel(itemModel);
 
         return CommonReturnType.create(itemVO);
     }
@@ -61,17 +64,27 @@ public class ItemController extends BaseController{
         itemModel.setImgUrl(imgUrl);
 
         ItemModel item = itemService.createItem(itemModel);
-        ItemVO itemVO = this.covertVoFromModel(item);
+        ItemVO itemVO = this.covertVOFromModel(item);
 
         return CommonReturnType.create(itemVO);
     }
 
-    private ItemVO covertVoFromModel(ItemModel itemModel) throws BusinessException {
+    private ItemVO covertVOFromModel(ItemModel itemModel) throws BusinessException {
         if (itemModel == null) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }
         ItemVO itemVO = new ItemVO();
         BeanUtils.copyProperties(itemModel,itemVO);
+
+        PromoModel itemPromo = itemModel.getPromoModel();
+        if(itemPromo !=null){//有秒杀活动
+            itemVO.setPromoStatus(itemPromo.getStatus());
+            itemVO.setPromoId(itemPromo.getId());
+            itemVO.setPromoPrice(itemPromo.getPromoItemPrice());
+            itemVO.setPromoStartTime(itemPromo.getStartTime().toString(DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")));
+        }else{
+            itemVO.setPromoStatus(0);
+        }
         return itemVO;
     }
 }

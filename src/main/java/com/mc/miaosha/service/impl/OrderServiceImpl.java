@@ -37,7 +37,7 @@ public class OrderServiceImpl implements OrderService {
     private SequenceDOMapper sequenceDOMapper;
 
     @Override
-    public OrderModel createOrder(Integer userId, Integer itemId, Integer amount) throws BusinessException {
+    public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount) throws BusinessException {
         //信息校验
         UserModel userModel = userService.getUserById(userId);
         if (userModel == null) {
@@ -51,13 +51,29 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"购买数量不正确");
         }
 
+        //校验活动信息
+        if (promoId != null){
+            if(itemModel.getPromoModel().getId() != promoId){
+                throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
+            }else if(itemModel.getPromoModel().getStatus() !=2){
+                throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
+            }
+        }
+
         //订单落地扣款（支付落地扣款）
         OrderModel orderModel = new OrderModel();
         orderModel.setUserId(userId);
         orderModel.setItemId(itemId);
         orderModel.setAmount(amount);
-        orderModel.setItemPrice(itemModel.getPrice());
-        orderModel.setOrderPrice(itemModel.getPrice().multiply(new BigDecimal(amount)));
+        orderModel.setPromoId(promoId);
+        //校验是否有秒杀活动
+        if(itemModel.getPromoModel() != null && itemModel.getPromoModel().getStatus().intValue() == 2){
+            orderModel.setItemPrice(itemModel.getPromoModel().getPromoItemPrice());
+        }else {
+            orderModel.setItemPrice(itemModel.getPrice());
+        }
+        orderModel.setOrderPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
+
         //减商品库存
         boolean succeed = itemService.decreaseStock(itemId, amount);
         if (!succeed){
