@@ -5,6 +5,7 @@ import com.mc.miaosha.controller.viewobject.ItemVO;
 import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.error.EmBusinessError;
 import com.mc.miaosha.response.CommonReturnType;
+import com.mc.miaosha.service.CacheService;
 import com.mc.miaosha.service.ItemService;
 import com.mc.miaosha.service.model.ItemModel;
 import com.mc.miaosha.service.model.PromoModel;
@@ -30,6 +31,9 @@ public class ItemController extends BaseController{
     @Autowired
     private RedisTemplate redisTemplate;
 
+    @Autowired
+    private CacheService cacheService;
+
     @RequestMapping(value = "/list",method = RequestMethod.GET)
     @ResponseBody
     public CommonReturnType listItem() throws BusinessException {
@@ -49,11 +53,18 @@ public class ItemController extends BaseController{
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }
 
-        ItemModel itemModel = (ItemModel)redisTemplate.opsForValue().get("item_" + id);
+        ItemModel itemModel = null;
+        //先查本地缓存
+        itemModel = (ItemModel)cacheService.getCommonCache("item_" + id);
         if(itemModel == null){
-            itemModel = itemService.getItemById(id);
-            redisTemplate.opsForValue().set("item_"+id, itemModel);
-            redisTemplate.expire("item_"+id,10, TimeUnit.MINUTES);
+            //查redis缓存
+            itemModel = (ItemModel)redisTemplate.opsForValue().get("item_" + id);
+            if(itemModel == null){
+                itemModel = itemService.getItemById(id);
+                redisTemplate.opsForValue().set("item_"+id, itemModel);
+                redisTemplate.expire("item_"+id,10, TimeUnit.MINUTES);
+            }
+            cacheService.setCommonCache("item_"+id,itemModel);
         }
 
         ItemVO itemVO = this.covertVOFromModel(itemModel);
