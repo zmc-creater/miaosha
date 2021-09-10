@@ -24,9 +24,9 @@
     id, title, price, sales, description, img_url
   </sql>
 
-  <select id="selectByTitle" parameterType="java.lang.String">
+  <select id="selectByTitle" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
-    title
+    <include refid="Base_Column_List" />
     from item
     where title = #{title,jdbcType=VARCHAR}
   </select>

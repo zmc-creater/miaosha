@@ -1,9 +1,11 @@
 package com.mc.miaosha.controller.viewobject;
 
+import java.io.Serializable;
+
 /**
  * 前端需要的数据
  */
-public class UserVO {
+public class UserVO implements Serializable {
     private Integer id;
     private String name;
     private Byte gender;
