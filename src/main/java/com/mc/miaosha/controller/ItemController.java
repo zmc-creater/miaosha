@@ -1,5 +1,6 @@
 package com.mc.miaosha.controller;
 
+import com.alibaba.druid.support.json.JSONUtils;
 import com.mc.miaosha.controller.viewobject.ItemVO;
 import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.error.EmBusinessError;
@@ -10,11 +11,14 @@ import com.mc.miaosha.service.model.PromoModel;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Controller("item")
 @RequestMapping(value = "/item")
@@ -22,6 +26,9 @@ public class ItemController extends BaseController{
 
     @Autowired
     private ItemService itemService;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @RequestMapping(value = "/list",method = RequestMethod.GET)
     @ResponseBody
@@ -34,14 +41,20 @@ public class ItemController extends BaseController{
         return CommonReturnType.create(itemModelList);
     }
 
-    @RequestMapping(value = "/getItem", method = {RequestMethod.GET})
+    @RequestMapping(value = "/get", method = {RequestMethod.GET})
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id")Integer id) throws BusinessException {
 
         if (id == null) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }
-        ItemModel itemModel = itemService.getItemById(id);
+
+        ItemModel itemModel = (ItemModel)redisTemplate.opsForValue().get("item_" + id);
+        if(itemModel == null){
+            itemModel = itemService.getItemById(id);
+            redisTemplate.opsForValue().set("item_"+id, itemModel);
+            redisTemplate.expire("item_"+id,10, TimeUnit.MINUTES);
+        }
 
         ItemVO itemVO = this.covertVOFromModel(itemModel);
 

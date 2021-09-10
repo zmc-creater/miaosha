@@ -5,7 +5,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
-public class ItemModel {
+public class ItemModel{
     private Integer id;
 
     @NotBlank(message = "名称不能不填")
