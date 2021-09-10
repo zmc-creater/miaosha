@@ -41,7 +41,6 @@ public class OrderController extends BaseController{
             throw new BusinessException(EmBusinessError.USER_NOT_LOGIN);
         }
 
-
         //UserVO userVO = (UserVO) httpServletRequest.getSession().getAttribute("LOGIN_USER");
 
         //下单

@@ -55,6 +55,8 @@ public class UserController extends BaseController{
         //生成凭证token，UUID
         String uuidToken = UUID.randomUUID().toString();
         uuidToken = uuidToken.replace("-", "");
+
+        //登录令牌存入redis
         redisTemplate.opsForValue().set(uuidToken,userModel);
         redisTemplate.expire(uuidToken,1, TimeUnit.HOURS);
 
@@ -110,6 +112,8 @@ public class UserController extends BaseController{
 
         //将OTP验证码与用户的手机号关联,使用http的session
         //httpServletRequest.getSession().setAttribute(telphone,otpCode);
+
+        //将otpCode存入redis，5min有效期
         redisTemplate.opsForValue().set(telphone,otpCode);
         redisTemplate.expire(telphone,5,TimeUnit.MINUTES);
 
