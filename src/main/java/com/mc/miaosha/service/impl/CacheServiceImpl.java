@@ -18,7 +18,7 @@ public class CacheServiceImpl implements CacheService {
         commonCache = CacheBuilder.newBuilder()
                 .initialCapacity(10)
                 .maximumSize(100)
-                .expireAfterWrite(30, TimeUnit.SECONDS).build();
+                .expireAfterWrite(1, TimeUnit.MINUTES).build();
     }
 
     @Override

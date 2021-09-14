@@ -1,6 +1,5 @@
 package com.mc.miaosha.controller;
 
-import com.mc.miaosha.controller.viewobject.UserVO;
 import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.error.EmBusinessError;
 import com.mc.miaosha.response.CommonReturnType;
@@ -25,7 +24,7 @@ public class OrderController extends BaseController{
     @Autowired
     private RedisTemplate redisTemplate;
 
-    @RequestMapping(value = "/createorder",method = {RequestMethod.POST},consumes = {BaseController.CONTENT_TYPE_FORMED})
+    @RequestMapping(value = "/createorder",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     public CommonReturnType createOrder(@RequestParam(name = "itemId")Integer itemId,
         @RequestParam(name = "amount")Integer amount,
         @RequestParam(name = "promoId")String netPromoId) throws BusinessException {

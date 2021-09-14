@@ -38,15 +38,22 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount) throws BusinessException {
-        //信息校验
-        UserModel userModel = userService.getUserById(userId);
+        //校验用户是否存在
+        //UserModel userModel = userService.getUserById(userId);
+        //在缓存中查看用户是否存在
+        UserModel userModel = userService.getUserByIdInCache(userId);
         if (userModel == null) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"用户信息不正确");
         }
-        ItemModel itemModel = itemService.getItemById(itemId);
+
+        //校验商品是否存在
+        //ItemModel itemModel = itemService.getItemById(itemId);
+        //在缓存中找商品信息是否存在
+        ItemModel itemModel = itemService.getItemByIdInCache(itemId);
         if (itemModel == null) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"商品信息异常");
         }
+
         if(amount <=0 || amount >99){
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"购买数量不正确");
         }

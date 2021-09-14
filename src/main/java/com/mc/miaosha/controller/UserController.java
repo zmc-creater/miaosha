@@ -40,7 +40,7 @@ public class UserController extends BaseController{
     RedisTemplate redisTemplate;
 
     //用户登录
-    @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {BaseController.CONTENT_TYPE_FORMED})
+    @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     @ResponseBody
     public CommonReturnType login(@RequestParam(name = "telphone") String telphone,
                       @RequestParam(name = "password") String encrpPassword) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
@@ -67,7 +67,7 @@ public class UserController extends BaseController{
     }
 
     //用户注册
-    @RequestMapping(value = "/register",method = {RequestMethod.POST},consumes = {BaseController.CONTENT_TYPE_FORMED})
+    @RequestMapping(value = "/register",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     @ResponseBody
     public CommonReturnType register(@RequestParam(name = "name")String name,
                                      @RequestParam(name = "gender") Byte gender,
@@ -102,7 +102,7 @@ public class UserController extends BaseController{
 
 
     @ResponseBody
-    @RequestMapping(value = "/getotp",method = {RequestMethod.POST},consumes = {BaseController.CONTENT_TYPE_FORMED})
+    @RequestMapping(value = "/getotp",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     public CommonReturnType getOpt(@RequestParam(name = "telphone")String telphone){
         //按照一定规则生成opt验证码
         Random random = new Random();

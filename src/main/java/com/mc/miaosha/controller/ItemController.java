@@ -72,7 +72,7 @@ public class ItemController extends BaseController{
         return CommonReturnType.create(itemVO);
     }
 
-    @RequestMapping(value = "/createItem",method = {RequestMethod.POST},consumes = {BaseController.CONTENT_TYPE_FORMED})
+    @RequestMapping(value = "/createItem",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     @ResponseBody
     public CommonReturnType createItem(@RequestParam(name = "title")String title,
                                        @RequestParam(name = "price")BigDecimal price,
