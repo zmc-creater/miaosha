@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -60,7 +62,7 @@ public class OrderServiceImpl implements OrderService {
 
         //校验活动信息
         if (promoId != null){
-            if(itemModel.getPromoModel().getId() != promoId){
+            if(!promoId.equals(itemModel.getPromoModel().getId())){
                 throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
             }else if(itemModel.getPromoModel().getStatus() !=2){
                 throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
@@ -74,26 +76,28 @@ public class OrderServiceImpl implements OrderService {
         orderModel.setAmount(amount);
         orderModel.setPromoId(promoId);
         //校验是否有秒杀活动
-        if(itemModel.getPromoModel() != null && itemModel.getPromoModel().getStatus().intValue() == 2){
+        if(itemModel.getPromoModel() != null && itemModel.getPromoModel().getStatus() == 2){
             orderModel.setItemPrice(itemModel.getPromoModel().getPromoItemPrice());
         }else {
             orderModel.setItemPrice(itemModel.getPrice());
         }
         orderModel.setOrderPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
 
-        //减商品库存
-        boolean succeed = itemService.decreaseStock(itemId, amount);
-        if (!succeed){
-            throw new BusinessException(EmBusinessError.ITEM_AMOUNT_NOT_ENOUGH,"商品数量不足");
+        //2 落单减商品库存
+        boolean result = itemService.decreaseStock(itemId, amount);
+        if (!result){
+            throw new BusinessException(EmBusinessError.ITEM_AMOUNT_NOT_ENOUGH);
         }
-        //增加商品销量
-        itemService.increaseSales(itemId, amount);
+
         //生成订单流水号
         orderModel.setId(this.generateOrderNO());
 
         //订单入库
         OrderDO orderDO = this.covertFromModel(orderModel);
         orderDOMapper.insertSelective(orderDO);
+
+        //增加商品销量
+        itemService.increaseSales(itemId, amount);
 
         return orderModel;
     }
@@ -107,7 +111,7 @@ public class OrderServiceImpl implements OrderService {
 
         //中间6位,自动增加位
         //获取sequence
-        int sequence = 0;
+        int sequence;
         SequenceDO sequenceDO = sequenceDOMapper.getSequenceByName("order_info");
         sequence = sequenceDO.getCurrentValue();
         sequenceDO.setCurrentValue(sequence + sequenceDO.getStep());

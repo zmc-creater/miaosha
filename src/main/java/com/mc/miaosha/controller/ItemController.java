@@ -7,6 +7,7 @@ import com.mc.miaosha.error.EmBusinessError;
 import com.mc.miaosha.response.CommonReturnType;
 import com.mc.miaosha.service.CacheService;
 import com.mc.miaosha.service.ItemService;
+import com.mc.miaosha.service.PromoService;
 import com.mc.miaosha.service.model.ItemModel;
 import com.mc.miaosha.service.model.PromoModel;
 import org.joda.time.format.DateTimeFormat;
@@ -34,6 +35,9 @@ public class ItemController extends BaseController{
     @Autowired
     private CacheService cacheService;
 
+    @Autowired
+    private PromoService promoService;
+
     @RequestMapping(value = "/list",method = RequestMethod.GET)
     @ResponseBody
     public CommonReturnType listItem() throws BusinessException {
@@ -53,9 +57,8 @@ public class ItemController extends BaseController{
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }
 
-        ItemModel itemModel = null;
         //先查本地缓存
-        itemModel = (ItemModel)cacheService.getCommonCache("item_" + id);
+        ItemModel itemModel = (ItemModel)cacheService.getCommonCache("item_" + id);
         if(itemModel == null){
             //查redis缓存
             itemModel = (ItemModel)redisTemplate.opsForValue().get("item_" + id);
@@ -93,7 +96,14 @@ public class ItemController extends BaseController{
         return CommonReturnType.create(itemVO);
     }
 
-    private ItemVO covertVOFromModel(ItemModel itemModel) throws BusinessException {
+    @RequestMapping(value = "/publishpromo", method = {RequestMethod.GET})
+    @ResponseBody
+    public CommonReturnType publishPromo(@RequestParam(name = "id")Integer id) throws BusinessException {
+        promoService.publishPromo(id);
+        return CommonReturnType.create(null);
+    }
+
+        private ItemVO covertVOFromModel(ItemModel itemModel) throws BusinessException {
         if (itemModel == null) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }

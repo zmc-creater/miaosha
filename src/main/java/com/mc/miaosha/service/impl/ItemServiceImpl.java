@@ -6,6 +6,7 @@ import com.mc.miaosha.dataobject.ItemDO;
 import com.mc.miaosha.dataobject.ItemStockDO;
 import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.error.EmBusinessError;
+import com.mc.miaosha.mq.MqProducer;
 import com.mc.miaosha.service.ItemService;
 import com.mc.miaosha.service.PromoService;
 import com.mc.miaosha.service.model.ItemModel;
@@ -24,6 +25,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
+    @Autowired
+    private MqProducer mqProducer;
+
     @Autowired
     private ValidatorImpl validator;
 
@@ -82,9 +86,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemModel getItemById(Integer id) throws BusinessException {
 
-        ItemDO itemDO = null;
-
-        itemDO = itemDOMapper.selectByPrimaryKey(id);
+        ItemDO itemDO = itemDOMapper.selectByPrimaryKey(id);
         if (itemDO == null) {
             throw new BusinessException(EmBusinessError.ITEM_NOT_EXIST,EmBusinessError.ITEM_NOT_EXIST.getErrMsg());
         }
@@ -94,7 +96,7 @@ public class ItemServiceImpl implements ItemService {
 
         //获取商品活动信息
         PromoModel promoModel = promoService.getPromoByItemId(itemModel.getId());
-        if (promoModel != null && promoModel.getStatus().intValue() != 3) {
+        if (promoModel != null && promoModel.getStatus() != 3) {
             itemModel.setPromoModel(promoModel);
         }
 
@@ -103,12 +105,34 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public boolean decreaseStock(Integer itemId, Integer amount) {
-        int effect = itemStockDOMapper.decreaseStock(amount, itemId);
-        if (effect < 0){
+    public boolean decreaseStock(Integer itemId, Integer amount) throws BusinessException {
+        //int effect = itemStockDOMapper.decreaseStock(itemId,amount);
+        //redis中扣减商品库存
+        long result = redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount * (-1));
+        if (result >= 0){
+            ////扣减库存成功
+            //boolean mqResult = asyncDecreaseStock(itemId, amount);
+            //if(!mqResult){
+            //    redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount);
+            //    return false;
+            //}
+            return true;
+        }else{
+            increaseStock(itemId,amount);
             return false;
         }
+    }
+
+    @Override
+    public boolean increaseStock(Integer itemId, Integer amount) {
+        redisTemplate.opsForValue().increment("promo_item_stock_" + itemId, amount);
         return true;
+    }
+
+    @Override
+    public boolean asyncDecreaseStock(Integer itemId, Integer amount) {
+        boolean mqResult = mqProducer.asyncReduceStock(itemId, amount);
+        return mqResult;
     }
 
     @Override

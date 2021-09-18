@@ -2,9 +2,10 @@ package com.mc.miaosha.controller;
 
 import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.error.EmBusinessError;
+import com.mc.miaosha.mq.MqProducer;
 import com.mc.miaosha.response.CommonReturnType;
+import com.mc.miaosha.service.ItemService;
 import com.mc.miaosha.service.OrderService;
-import com.mc.miaosha.service.model.OrderModel;
 import com.mc.miaosha.service.model.UserModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,6 +16,10 @@ import javax.servlet.http.HttpServletRequest;
 @RestController("order")
 @RequestMapping("/order")
 public class OrderController extends BaseController{
+
+    @Autowired
+    private MqProducer mqProducer;
+
     @Autowired
     private OrderService orderService;
 
@@ -23,6 +28,9 @@ public class OrderController extends BaseController{
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Autowired
+    private ItemService itemService;
 
     @RequestMapping(value = "/createorder",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     public CommonReturnType createOrder(@RequestParam(name = "itemId")Integer itemId,
@@ -43,15 +51,19 @@ public class OrderController extends BaseController{
         //UserVO userVO = (UserVO) httpServletRequest.getSession().getAttribute("LOGIN_USER");
 
         //下单
-        Integer promoId=0;
-        if(netPromoId == ""){
+        Integer promoId;
+        if("".equals(netPromoId)){
             promoId = null;
         }else{
             promoId = Integer.valueOf(netPromoId);
         }
-        OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);
+        //OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);
 
-        return CommonReturnType.create(orderModel);
+        if(!mqProducer.transactionAsyncReduceStock(itemId,amount,userModel.getId(),promoId)){
+            throw new BusinessException(EmBusinessError.MQ_SEND_FAIL);
+        }
+
+        return CommonReturnType.create(null);
     }
 
 }

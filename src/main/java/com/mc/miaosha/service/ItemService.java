@@ -15,6 +15,11 @@ public interface ItemService {
 
     boolean decreaseStock(Integer itemId,Integer amount) throws BusinessException;
 
+    //回滚库存
+    boolean increaseStock(Integer itemId,Integer amount) throws BusinessException;
+    //异步更新库存
+    boolean asyncDecreaseStock(Integer itemId,Integer amount);
+
     boolean increaseSales(Integer itemId,Integer amount) throws BusinessException;
 
     ItemModel getItemByIdInCache(Integer id) throws BusinessException;
