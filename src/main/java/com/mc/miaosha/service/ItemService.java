@@ -23,4 +23,6 @@ public interface ItemService {
     boolean increaseSales(Integer itemId,Integer amount) throws BusinessException;
 
     ItemModel getItemByIdInCache(Integer id) throws BusinessException;
+
+    String initStockLod(Integer itemId,Integer amount);
 }

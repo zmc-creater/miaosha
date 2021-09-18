@@ -35,7 +35,7 @@ public class OrderController extends BaseController{
     @RequestMapping(value = "/createorder",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     public CommonReturnType createOrder(@RequestParam(name = "itemId")Integer itemId,
         @RequestParam(name = "amount")Integer amount,
-        @RequestParam(name = "promoId")String netPromoId) throws BusinessException {
+        @RequestParam(name = "promoId")Integer promoId) throws BusinessException {
 
         //验证用户登录状态
 
@@ -50,17 +50,17 @@ public class OrderController extends BaseController{
 
         //UserVO userVO = (UserVO) httpServletRequest.getSession().getAttribute("LOGIN_USER");
 
-        //下单
-        Integer promoId;
-        if("".equals(netPromoId)){
-            promoId = null;
-        }else{
-            promoId = Integer.valueOf(netPromoId);
-        }
         //OrderModel orderModel = orderService.createOrder(userModel.getId(), itemId, promoId, amount);
 
-        if(!mqProducer.transactionAsyncReduceStock(itemId,amount,userModel.getId(),promoId)){
-            throw new BusinessException(EmBusinessError.MQ_SEND_FAIL);
+        //生成库存流水之前检查缓存中是否已经存在售罄标识，若存在直接返回
+        if(redisTemplate.hasKey("promo_item_stock_invalid"+itemId)) {
+            throw new BusinessException(EmBusinessError.ITEM_AMOUNT_NOT_ENOUGH);
+        }
+        //加入库存流水状态
+        String stockLogId = itemService.initStockLod(itemId,amount);
+
+        if(!mqProducer.transactionAsyncReduceStock(itemId,amount,userModel.getId(),promoId,stockLogId)){
+            throw new BusinessException(EmBusinessError.UNKNOWN_ERROR,"下单失败");
         }
 
         return CommonReturnType.create(null);

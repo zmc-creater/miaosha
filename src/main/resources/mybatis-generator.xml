@@ -17,7 +17,7 @@
 
         <javaClientGenerator type="XMLMAPPER" targetPackage="com.mc.miaosha.dao" targetProject="src/main/java"/>
 
-        <table tableName="promo" domainObjectName="PromoDO"
+        <table tableName="stock_log" domainObjectName="StockLogDO"
                enableCountByExample="false"
                enableUpdateByExample="false"
                enableDeleteByExample="false"/>

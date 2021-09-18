@@ -2,8 +2,10 @@ package com.mc.miaosha.service.impl;
 
 import com.mc.miaosha.dao.OrderDOMapper;
 import com.mc.miaosha.dao.SequenceDOMapper;
+import com.mc.miaosha.dao.StockLogDOMapper;
 import com.mc.miaosha.dataobject.OrderDO;
 import com.mc.miaosha.dataobject.SequenceDO;
+import com.mc.miaosha.dataobject.StockLogDO;
 import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.error.EmBusinessError;
 import com.mc.miaosha.service.ItemService;
@@ -12,6 +14,7 @@ import com.mc.miaosha.service.UserService;
 import com.mc.miaosha.service.model.ItemModel;
 import com.mc.miaosha.service.model.OrderModel;
 import com.mc.miaosha.service.model.UserModel;
+import org.apache.catalina.StoreManager;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,8 +41,11 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private SequenceDOMapper sequenceDOMapper;
 
+    @Autowired
+    private StockLogDOMapper stockLogDOMapper;
+
     @Override
-    public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount) throws BusinessException {
+    public OrderModel createOrder(Integer userId, Integer itemId, Integer promoId, Integer amount,String stockLogId) throws BusinessException {
         //校验用户是否存在
         //UserModel userModel = userService.getUserById(userId);
         //在缓存中查看用户是否存在
@@ -83,7 +89,7 @@ public class OrderServiceImpl implements OrderService {
         }
         orderModel.setOrderPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
 
-        //2 落单减商品库存
+        //2 落单减redis商品库存
         boolean result = itemService.decreaseStock(itemId, amount);
         if (!result){
             throw new BusinessException(EmBusinessError.ITEM_AMOUNT_NOT_ENOUGH);
@@ -98,6 +104,15 @@ public class OrderServiceImpl implements OrderService {
 
         //增加商品销量
         itemService.increaseSales(itemId, amount);
+
+        //设置库存流水状态为成功
+        StockLogDO stockLogDO = stockLogDOMapper.selectByPrimaryKey(stockLogId);
+        if(stockLogDO == null){
+            throw new BusinessException(EmBusinessError.UNKNOWN_ERROR);
+        }
+        //设置流水状态为成功
+        stockLogDO.setStatus(2);
+        stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
 
         return orderModel;
     }
