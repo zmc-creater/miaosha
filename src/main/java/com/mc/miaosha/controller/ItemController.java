@@ -1,6 +1,5 @@
 package com.mc.miaosha.controller;
 
-import com.alibaba.druid.support.json.JSONUtils;
 import com.mc.miaosha.controller.viewobject.ItemVO;
 import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.error.EmBusinessError;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 

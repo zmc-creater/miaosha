@@ -51,11 +51,11 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public ItemModel createItem(ItemModel itemModel) throws BusinessException {
+    public ItemModel createItem(ItemModel itemModel) {
         //入参校验
         ValidationResult result = validator.validate(itemModel);
         if (result.isHasErrors()) {
-            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,result.getErrMsg());
+            return null;
         }
 
 //        if (itemDOMapper.selectByTitle(itemModel.getTitle())==0) {
@@ -90,11 +90,11 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemModel getItemById(Integer id) throws BusinessException {
+    public ItemModel getItemById(Integer id) {
 
         ItemDO itemDO = itemDOMapper.selectByPrimaryKey(id);
         if (itemDO == null) {
-            throw new BusinessException(EmBusinessError.ITEM_NOT_EXIST,EmBusinessError.ITEM_NOT_EXIST.getErrMsg());
+            return null;
         }
 
         ItemStockDO itemStockDO = itemStockDOMapper.selectByItemId(itemDO.getId());
@@ -111,7 +111,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public boolean decreaseStock(Integer itemId, Integer amount) throws BusinessException {
+    public boolean decreaseStock(Integer itemId, Integer amount) {
         //int effect = itemStockDOMapper.decreaseStock(itemId,amount);
         //redis中扣减商品库存
         long result = redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount * (-1));
@@ -151,7 +151,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemModel getItemByIdInCache(Integer id) throws BusinessException {
+    public ItemModel getItemByIdInCache(Integer id) {
         ItemModel itemModel = (ItemModel) redisTemplate.opsForValue().get("item_validate_" + id);
         if (itemModel == null) {
             itemModel = getItemById(id);

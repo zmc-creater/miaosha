@@ -57,23 +57,23 @@ public class OrderServiceImpl implements OrderService {
         //校验商品是否存在
         //ItemModel itemModel = itemService.getItemById(itemId);
         //在缓存中找商品信息是否存在
-        ItemModel itemModel = itemService.getItemByIdInCache(itemId);
-        if (itemModel == null) {
-            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"商品信息异常");
-        }
+        //ItemModel itemModel = itemService.getItemByIdInCache(itemId);
+        //if (itemModel == null) {
+        //    throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"商品信息异常");
+        //}
 
         if(amount <=0 || amount >99){
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"购买数量不正确");
         }
 
         //校验活动信息
-        if (promoId != null){
-            if(!promoId.equals(itemModel.getPromoModel().getId())){
-                throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
-            }else if(itemModel.getPromoModel().getStatus() !=2){
-                throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
-            }
-        }
+        //if (promoId != null){
+        //    if(!promoId.equals(itemModel.getPromoModel().getId())){
+        //        throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
+        //    }else if(itemModel.getPromoModel().getStatus() !=2){
+        //        throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"活动信息不正确");
+        //    }
+        //}
 
         //订单落地扣款（支付落地扣款）
         OrderModel orderModel = new OrderModel();
@@ -82,25 +82,25 @@ public class OrderServiceImpl implements OrderService {
         orderModel.setAmount(amount);
         orderModel.setPromoId(promoId);
         //校验是否有秒杀活动
-        if(itemModel.getPromoModel() != null && itemModel.getPromoModel().getStatus() == 2){
-            orderModel.setItemPrice(itemModel.getPromoModel().getPromoItemPrice());
-        }else {
-            orderModel.setItemPrice(itemModel.getPrice());
-        }
-        orderModel.setOrderPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
+        //if(itemModel.getPromoModel() != null && itemModel.getPromoModel().getStatus() == 2){
+        //    orderModel.setItemPrice(itemModel.getPromoModel().getPromoItemPrice());
+        //}else {
+        //    orderModel.setItemPrice(itemModel.getPrice());
+        //}
+        //orderModel.setOrderPrice(orderModel.getItemPrice().multiply(new BigDecimal(amount)));
 
-        //2 落单减redis商品库存
+        //2. 落单减redis商品库存
         boolean result = itemService.decreaseStock(itemId, amount);
         if (!result){
             throw new BusinessException(EmBusinessError.ITEM_AMOUNT_NOT_ENOUGH);
         }
 
-        //生成订单流水号
-        orderModel.setId(this.generateOrderNO());
-
-        //订单入库
+        //3. 订单入库
         OrderDO orderDO = this.covertFromModel(orderModel);
         orderDOMapper.insertSelective(orderDO);
+
+        //生成订单流水号
+        orderModel.setId(this.generateOrderNO());
 
         //增加商品销量
         itemService.increaseSales(itemId, amount);
@@ -110,7 +110,6 @@ public class OrderServiceImpl implements OrderService {
         if(stockLogDO == null){
             throw new BusinessException(EmBusinessError.UNKNOWN_ERROR);
         }
-        //设置流水状态为成功
         stockLogDO.setStatus(2);
         stockLogDOMapper.updateByPrimaryKeySelective(stockLogDO);
 
