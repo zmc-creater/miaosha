@@ -47,15 +47,6 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }
 
-        /*
-        if(StringUtils.isEmpty(userModel.getName())
-                ||userModel.getGender() == null
-                ||userModel.getAge() ==null
-                || StringUtils.isEmpty(userModel.getPhone())
-                ||StringUtils.isEmpty(userModel.getEncrptPaaword())){
-            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
-        }
-        */
         ValidationResult result = this.validator.validate(userModel);
         if (result.isHasErrors()) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,result.getErrMsg());
@@ -91,13 +82,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserModel getUserByIdInCache(Integer id) {
-        UserModel userModel = (UserModel) redisTemplate.opsForValue().get("user_validate_"+id);
+    public UserModel getUserByIdInCache(Integer userId) {
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get("user_validate_"+userId);
         if (userModel == null) {
-            userModel = getUserById(id);
+            userModel = getUserById(userId);
             if (userModel == null) {
-                redisTemplate.opsForValue().set("user_validate_" + id, userModel);
-                redisTemplate.expire("user_validate_" + id, 10, TimeUnit.MINUTES);
+                redisTemplate.opsForValue().set("user_validate_" + userId, userModel);
+                redisTemplate.expire("user_validate_" + userId, 10, TimeUnit.MINUTES);
             }
         }
         return userModel;

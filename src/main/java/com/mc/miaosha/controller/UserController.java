@@ -39,7 +39,15 @@ public class UserController extends BaseController{
     @Autowired
     RedisTemplate redisTemplate;
 
-    //用户登录
+    /**
+     * 用户登录
+     * @param telphone
+     * @param encrpPassword
+     * @return
+     * @throws BusinessException
+     * @throws UnsupportedEncodingException
+     * @throws NoSuchAlgorithmException
+     */
     @RequestMapping(value = "/login",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     @ResponseBody
     public CommonReturnType login(@RequestParam(name = "telphone") String telphone,
@@ -50,7 +58,7 @@ public class UserController extends BaseController{
         }
 
         //验证登录是否成功
-        UserModel userModel = userService.validLogin(telphone, this.EncodeByMD5(encrpPassword));
+        UserModel userModel = userService.validLogin(telphone, this.encodeByMD5(encrpPassword));
 
         //生成凭证token，UUID
         String uuidToken = UUID.randomUUID().toString();
@@ -60,13 +68,23 @@ public class UserController extends BaseController{
         redisTemplate.opsForValue().set(uuidToken,userModel);
         redisTemplate.expire(uuidToken,1, TimeUnit.HOURS);
 
-//        httpServletRequest.getSession().setAttribute("IS_LOGIN",true);
-//        httpServletRequest.getSession().setAttribute("LOGIN_USER",userVO);
         System.out.println("登录成功");
         return CommonReturnType.create(uuidToken);
     }
 
-    //用户注册
+    /**
+     * 用户注册
+     * @param name
+     * @param gender
+     * @param age
+     * @param phone
+     * @param password
+     * @param otpCode
+     * @return
+     * @throws BusinessException
+     * @throws UnsupportedEncodingException
+     * @throws NoSuchAlgorithmException
+     */
     @RequestMapping(value = "/register",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
     @ResponseBody
     public CommonReturnType register(@RequestParam(name = "name")String name,
@@ -74,11 +92,8 @@ public class UserController extends BaseController{
                                      @RequestParam(name = "age")Integer age,
                                      @RequestParam(name = "telphone")String phone,
                                      @RequestParam(name = "password")String password,
-                                     @RequestParam(name = "otpCode")String otpCode,
-                                     HttpServletResponse httpServletResponse) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
+                                     @RequestParam(name = "otpCode")String otpCode) throws BusinessException, UnsupportedEncodingException, NoSuchAlgorithmException {
         //验证码校验
-        //edge和chrome浏览器获取不到session，火狐浏览器可以
-        //String inSessionOtpCode = (String)httpServletRequest.getSession().getAttribute(phone);
         String inRedisOtpCode = (String)redisTemplate.opsForValue().get(phone);
         if(!com.alibaba.druid.util.StringUtils.equals(otpCode,inRedisOtpCode)){
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"验证码错误");
@@ -93,17 +108,21 @@ public class UserController extends BaseController{
 
         //JDK提供的MD5方法之只能加密16位
         //userModel.setEncrptPaaword(MD5Encoder.encode(password.getBytes()));
-        userModel.setEncrptPaaword(this.EncodeByMD5(password));
+        userModel.setEncrptPaaword(this.encodeByMD5(password));
         userModel.setRegisterMode("byphone");
         userService.register(userModel);
 
         return CommonReturnType.create(null);
     }
 
-
+    /**
+     * 获取otp短信
+     * @param telphone
+     * @return
+     */
     @ResponseBody
     @RequestMapping(value = "/getotp",method = {RequestMethod.POST},consumes = {CONTENT_TYPE_FORMED})
-    public CommonReturnType getOpt(@RequestParam(name = "telphone")String telphone){
+    public CommonReturnType getOtp(@RequestParam(name = "telphone")String telphone){
         //按照一定规则生成opt验证码
         Random random = new Random();
         int randomInt = random.nextInt(99999);
@@ -113,7 +132,6 @@ public class UserController extends BaseController{
         //将OTP验证码与用户的手机号关联,使用http的session
         //httpServletRequest.getSession().setAttribute(telphone,otpCode);
 
-        //将otpCode存入redis，5min有效期
         redisTemplate.opsForValue().set(telphone,otpCode);
         redisTemplate.expire(telphone,5,TimeUnit.MINUTES);
 
@@ -129,8 +147,7 @@ public class UserController extends BaseController{
         //获取对象核心模型
         UserModel userModel = userService.getUserById(id);
         if (userModel == null) {
-            //throw new BusinessException(EmBusinessError.USER_NOT_EXIST);
-            userModel.setEncrptPaaword("333rfsf");
+            throw new BusinessException(EmBusinessError.USER_NOT_EXIST);
         }
 
         UserVO userVO = convertFromModel(userModel);
@@ -138,7 +155,7 @@ public class UserController extends BaseController{
     }
 
 
-    public String EncodeByMD5(String str) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+    public String encodeByMD5(String str) throws NoSuchAlgorithmException, UnsupportedEncodingException {
         MessageDigest md5 = MessageDigest.getInstance("MD5");
         BASE64Encoder base64Encoder = new BASE64Encoder();
         String newstr = base64Encoder.encode(md5.digest(str.getBytes("UTF-8")));

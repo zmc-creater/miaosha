@@ -7,12 +7,19 @@ import com.mc.miaosha.response.CommonReturnType;
 import com.mc.miaosha.service.ItemService;
 import com.mc.miaosha.service.PromoService;
 import com.mc.miaosha.service.model.UserModel;
+import com.mc.miaosha.util.CodeUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.image.RenderedImage;
+import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.*;
 
 @RestController("order")
@@ -41,15 +48,18 @@ public class OrderController extends BaseController{
         executorService = Executors.newFixedThreadPool(20);
     }
 
-
-    //生成秒杀令牌
-    @RequestMapping(value = "/generatetoken",method = {RequestMethod.POST},consumes={CONTENT_TYPE_FORMED})
+    /**
+     * 生成验证码
+     * @param httpServletResponse
+     * @return
+     * @throws BusinessException
+     */
+    @RequestMapping(value = "/generateverifycode",method = {RequestMethod.GET,RequestMethod.POST})
     @ResponseBody
-    public CommonReturnType generatetoken(@RequestParam(name="itemId")Integer itemId,
-                                          @RequestParam(name="promoId")Integer promoId) throws BusinessException {
+    public void generateverifycode(HttpServletResponse httpServletResponse) throws BusinessException {
         //根据token获取用户信息
         String token = httpServletRequest.getParameterMap().get("token")[0];
-        if(org.apache.commons.lang3.StringUtils.isEmpty(token)){
+        if(StringUtils.isEmpty(token)){
             throw new BusinessException(EmBusinessError.USER_NOT_LOGIN,"用户还未登陆，不能下单");
         }
         //获取用户的登陆信息
@@ -57,6 +67,47 @@ public class OrderController extends BaseController{
         if(userModel == null){
             throw new BusinessException(EmBusinessError.USER_NOT_LOGIN,"用户还未登陆，不能下单");
         }
+
+        Map<String,Object> map = CodeUtil.generateCodeAndPic();
+        redisTemplate.opsForValue().set("verify_code_"+userModel.getId(),map.get("code"));
+        redisTemplate.expire("verify_code_"+userModel.getId(),10,TimeUnit.MINUTES);
+
+        try {
+            ImageIO.write((RenderedImage) map.get("codePic"), "jpeg", httpServletResponse.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new BusinessException(EmBusinessError.UNKNOWN_ERROR,"生成验证码失败");
+        }
+    }
+    /**
+     * 生成秒杀令牌
+     */
+    @RequestMapping(value = "/generatetoken",method = {RequestMethod.POST},consumes={CONTENT_TYPE_FORMED})
+    @ResponseBody
+    public CommonReturnType generateToken(@RequestParam(name="itemId")Integer itemId,
+                                          @RequestParam(name="promoId")Integer promoId,
+                                          @RequestParam(name="verifyCode")String verifyCode) throws BusinessException {
+        //根据token获取用户信息
+        String token = httpServletRequest.getParameterMap().get("token")[0];
+        if(StringUtils.isEmpty(token)){
+            throw new BusinessException(EmBusinessError.USER_NOT_LOGIN,"用户还未登陆，不能下单");
+        }
+        //获取用户的登陆信息
+        UserModel userModel = (UserModel) redisTemplate.opsForValue().get(token);
+        if(userModel == null){
+            throw new BusinessException(EmBusinessError.USER_NOT_LOGIN,"用户还未登陆，不能下单");
+        }
+
+
+        //通过verifyCode验证验证码的有效性
+        String redisVerifyCode = (String) redisTemplate.opsForValue().get("verify_code_"+userModel.getId());
+        if(StringUtils.isEmpty(redisVerifyCode)){
+            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"请求非法");
+        }
+        if(!redisVerifyCode.equalsIgnoreCase(verifyCode)){
+            throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"请求非法，验证码错误");
+        }
+
         //获取秒杀访问令牌
         String promoToken = promoService.generateSecondKillToken(promoId,itemId,userModel.getId());
         if(promoToken == null){
