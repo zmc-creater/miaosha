@@ -1,5 +1,6 @@
 package com.mc.miaosha.controller;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.error.EmBusinessError;
 import com.mc.miaosha.mq.MqProducer;
@@ -43,9 +44,16 @@ public class OrderController extends BaseController{
 
     private ExecutorService executorService;
 
+    /**
+     * google guava提供的限流工具
+     */
+    private RateLimiter orderCreateRateLimiter;
+
     @PostConstruct
     public void init(){
         executorService = Executors.newFixedThreadPool(20);
+        //单机限制每秒的tps为200
+        orderCreateRateLimiter = RateLimiter.create(200);
     }
 
     /**
@@ -123,6 +131,9 @@ public class OrderController extends BaseController{
         @RequestParam(name = "promoId",required = false)Integer promoId,
         @RequestParam(name="promoToken",required = false)String promoToken) throws BusinessException {
 
+        if(!orderCreateRateLimiter.tryAcquire()){
+            throw new BusinessException(EmBusinessError.RATELIMTE);
+        }
         //验证用户登录状态
         String token = httpServletRequest.getParameterMap().get("token")[0];
         //拿到用户登录信息

@@ -2,7 +2,6 @@ package com.mc.miaosha.service.impl;
 
 import com.mc.miaosha.dao.PromoDOMapper;
 import com.mc.miaosha.dataobject.PromoDO;
-import com.mc.miaosha.error.BusinessException;
 import com.mc.miaosha.service.ItemService;
 import com.mc.miaosha.service.PromoService;
 import com.mc.miaosha.service.UserService;
@@ -68,7 +67,7 @@ public class PromoServiceImpl implements PromoService {
         //同步库存到redis
         redisTemplate.opsForValue().set("promo_item_stock_"+itemModel.getId(), itemModel.getStock());
 
-        //将大闸的限制数字设到redis内
+        //设置秒杀大闸，将大闸的限制数字设到redis内
         redisTemplate.opsForValue().set("promo_door_count_"+promoId,itemModel.getStock() * 5);
     }
 
