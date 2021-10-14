@@ -10,6 +10,8 @@ import com.mc.miaosha.service.PromoService;
 import com.mc.miaosha.service.model.UserModel;
 import com.mc.miaosha.util.CodeUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +28,7 @@ import java.util.concurrent.*;
 @RestController("order")
 @RequestMapping("/order")
 public class OrderController extends BaseController{
+    final Logger logger = LoggerFactory.getLogger(OrderController.class);
 
     @Autowired
     private MqProducer mqProducer;
@@ -156,12 +159,10 @@ public class OrderController extends BaseController{
         //同步调用线程池的submit方法
         //拥塞窗口为20的等待队列，用来队列化泄洪
         Future<Object> future = executorService.submit(new Callable<Object>() {
-
             @Override
             public Object call() throws Exception {
                 //加入库存流水init状态
                 String stockLogId = itemService.initStockLod(itemId,amount);
-
                 //再去完成对应的下单事务型消息机制
                 if(!mqProducer.transactionAsyncReduceStock(userModel.getId(),itemId,promoId,amount,stockLogId)){
                     throw new BusinessException(EmBusinessError.UNKNOWN_ERROR,"下单失败");

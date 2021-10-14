@@ -2,12 +2,16 @@ package com.mc.miaosha;
 
 import com.mc.miaosha.dao.ItemStockDOMapper;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 
 @SpringBootTest
 public class MiaoShaApplicationTest {
+    private static final Logger logger = LoggerFactory.getLogger(MiaoShaApplicationTest.class);
     @Autowired
     private RedisTemplate redisTemplate;
 
@@ -27,4 +31,7 @@ public class MiaoShaApplicationTest {
         System.out.println(i);
     }
 
+    @Test
+    public void test3(){
+    }
 }

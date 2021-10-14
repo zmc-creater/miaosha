@@ -15,6 +15,8 @@ import com.mc.miaosha.service.model.ItemModel;
 import com.mc.miaosha.service.model.PromoModel;
 import com.mc.miaosha.validator.ValidationResult;
 import com.mc.miaosha.validator.ValidatorImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -28,6 +30,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(ItemServiceImpl.class);
+
     @Autowired
     private MqProducer mqProducer;
 
@@ -91,7 +96,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemModel getItemById(Integer id) {
-
+        logger.info("getItemById::id = [{}]", id);
         ItemDO itemDO = itemDOMapper.selectByPrimaryKey(id);
         if (itemDO == null) {
             return null;
@@ -110,20 +115,21 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = {Exception.class})
     public boolean decreaseStock(Integer itemId, Integer amount) {
-        //int effect = itemStockDOMapper.decreaseStock(itemId,amount);
-        //redis中扣减商品库存
+        //redis中扣减商品库存，redis中是单线程，不存在并发问题，不用加分布式锁
         long result = redisTemplate.opsForValue().increment("promo_item_stock_"+itemId,amount * (-1));
         if (result > 0){
             //扣减库存成功
             return true;
         }else if(result == 0){
+            //售完最后一件，设置标志
             redisTemplate.opsForValue().set("promo_item_stock_invalid"+itemId,"true");
             return true;
         }else {
-                increaseStock(itemId,amount);
-                return false;
+            //回滚库存
+            increaseStock(itemId,amount);
+            return false;
         }
 
     }
@@ -163,13 +169,20 @@ public class ItemServiceImpl implements ItemService {
         return itemModel;
     }
 
-    //初始化对应的库存流水
+    /**
+     * 初始化对应的库存流水
+     * @param itemId
+     * @param amount
+     * @return 库存流水id
+     */
     @Override
     @Transactional
     public String initStockLod(Integer itemId, Integer amount) {
         StockLogDO stockLogDO = new StockLogDO();
         stockLogDO.setItemId(itemId);
         stockLogDO.setAmount(amount);
+
+        //库存流水为初始状态
         stockLogDO.setStatus(1);
         stockLogDO.setStockLogId(UUID.randomUUID().toString().replace("-",""));
 

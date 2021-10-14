@@ -9,6 +9,8 @@ import com.mc.miaosha.service.model.ItemModel;
 import com.mc.miaosha.service.model.PromoModel;
 import com.mc.miaosha.service.model.UserModel;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -19,6 +21,9 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class PromoServiceImpl implements PromoService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PromoServiceImpl.class);
+
     @Autowired
     private UserService userService;
 
@@ -73,6 +78,7 @@ public class PromoServiceImpl implements PromoService {
 
     @Override
     public String generateSecondKillToken(Integer promoId, Integer itemId, Integer userId) {
+        logger.info("generateSecondKillToken::promoId = [{}], itemId = [{}], userId = [{}]", promoId, itemId, userId);
         //生成库存流水之前检查缓存中是否已经存在售罄标识，若存在直接返回
         if(redisTemplate.hasKey("promo_item_stock_invalid"+itemId)) {
             return null;

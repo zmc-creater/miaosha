@@ -10,6 +10,8 @@ import com.mc.miaosha.service.PromoService;
 import com.mc.miaosha.service.model.ItemModel;
 import com.mc.miaosha.service.model.PromoModel;
 import org.joda.time.format.DateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 @Controller("item")
 @RequestMapping(value = "/item")
 public class ItemController extends BaseController{
+
+    private final Logger logger = LoggerFactory.getLogger(ItemController.class);
 
     @Autowired
     private ItemService itemService;
@@ -39,18 +43,19 @@ public class ItemController extends BaseController{
     @RequestMapping(value = "/list",method = RequestMethod.GET)
     @ResponseBody
     public CommonReturnType listItem() throws BusinessException {
-
+        logger.info("listItem");
         List<ItemModel> itemModelList = itemService.listItem();
         if (itemModelList == null) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR,"没有商品");
         }
+        logger.info("exit listItem method, return value{}",itemModelList);
         return CommonReturnType.create(itemModelList);
     }
 
     @RequestMapping(value = "/get", method = {RequestMethod.GET})
     @ResponseBody
     public CommonReturnType getItem(@RequestParam(name = "id")Integer id) throws BusinessException {
-
+        logger.info("getItem::id = [{}]", id);
         if (id == null) {
             throw new BusinessException(EmBusinessError.PARAMETER_VALIDATION_ERROR);
         }
@@ -65,6 +70,7 @@ public class ItemController extends BaseController{
                 redisTemplate.opsForValue().set("item_"+id, itemModel);
                 redisTemplate.expire("item_"+id,10, TimeUnit.MINUTES);
             }
+            //设置本地缓存
             cacheService.setCommonCache("item_"+id,itemModel);
         }
 
@@ -80,6 +86,8 @@ public class ItemController extends BaseController{
                                        @RequestParam(name = "stock")Integer stock,
                                        @RequestParam(name = "description")String description,
                                        @RequestParam(name = "imgUrl")String imgUrl) throws BusinessException {
+
+        logger.info("createItem::title = [{}], price = [{}], stock = [{}], description = [{}], imgUrl = [{}]", title, price, stock, description, imgUrl);
 
         ItemModel itemModel = new ItemModel();
         itemModel.setTitle(title);
@@ -97,6 +105,7 @@ public class ItemController extends BaseController{
     @RequestMapping(value = "/publishpromo", method = {RequestMethod.GET})
     @ResponseBody
     public CommonReturnType publishPromo(@RequestParam(name = "id")Integer id) throws BusinessException {
+        logger.info("publishPromo::id = [{}]", id);
         promoService.publishPromo(id);
         return CommonReturnType.create(null);
     }

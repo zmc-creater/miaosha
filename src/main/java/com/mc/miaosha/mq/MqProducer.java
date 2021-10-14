@@ -43,9 +43,9 @@ public class MqProducer {
 
     @PostConstruct
     public void init() throws MQClientException {
-        producer = new DefaultMQProducer("producer_group");
-        producer.setNamesrvAddr(nameAddr);
-        producer.start();
+        //producer = new DefaultMQProducer("producer_group");
+        //producer.setNamesrvAddr(nameAddr);
+        //producer.start();
 
         transactionMQProducer = new TransactionMQProducer("transaction_producer_group");
         transactionMQProducer.setNamesrvAddr(nameAddr);
@@ -98,14 +98,22 @@ public class MqProducer {
         });
     }
 
-    //事务型异步扣减库存消息
+    /**
+     * 事务型异步扣减库存消息
+     * @param itemId
+     * @param amount
+     * @param userId
+     * @param promoId
+     * @param stockLogId
+     * @return
+     */
     public boolean transactionAsyncReduceStock(Integer itemId,Integer amount, Integer userId,Integer promoId,String stockLogId) {
-        Map<String,Object> bodyMap = new HashMap<>();
+        Map<String,Object> bodyMap = new HashMap<>(3);
         bodyMap.put("itemId",itemId);
         bodyMap.put("amount",amount);
         bodyMap.put("stockLogId",stockLogId);
 
-        Map<String,Object> argsMap = new HashMap<>();
+        Map<String,Object> argsMap = new HashMap<>(5);
         argsMap.put("itemId",itemId);
         argsMap.put("amount",amount);
         argsMap.put("userId",userId);
